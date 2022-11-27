@@ -70,11 +70,14 @@ __global__ void optMM(const double* a, const double* b, double* c,
 
       // fill tiles and pad tiles
 
-      tileB[threadIdx.y][threadIdx.x] =
-          b[(row * nElements + block * TILE_LENGTH + threadIdx.x)] * CBB;
+      tileB[threadIdx.y][threadIdx.x] = b[(row * nElements + threadIdx.y +
+                                           block * TILE_LENGTH + threadIdx.x) *
+                                          CBB] *
+                                        CBB;
 
       tileA[threadIdx.y][threadIdx.x] =
-          a[((block * TILE_LENGTH + threadIdx.y) * nElements + col)] * CBA;
+          a[((block * TILE_LENGTH + threadIdx.y) * nElements + col) * CBA] *
+          CBA;
 
       // wait till A and B tiles are fully populated
       __syncthreads();
@@ -154,17 +157,17 @@ double profileKernel(int nBlocks, int nThreads, int nElements)
    activeWarps = nBlocks * nThreads / prop.warpSize;
    maxWarps = prop.maxThreadsPerMultiProcessor / prop.warpSize;
 
-   std::cout << "Occupancy: " << (double)activeWarps / maxWarps * 100 << "%"
-             << std::endl;
+   // std::cout << "Occupancy: " << (double)activeWarps / maxWarps * 100 << "%"
+   //           << std::endl;
    return (double)activeWarps / maxWarps * 100;
 }
 
 void matrixMultiplyTest(long nElements, int nThreads, int nBlocks,
-                        ofstream& output, int type)
+                        ostream& output, int type)
 {
-   printf("Elements: %d\nThreads: %d\nBlocks: %d\n", nElements, nThreads,
-          nBlocks);
-   printf("TOTAL ELEMENTS: %d\n", nElements * nElements);
+   // printf("Elements: %d\nThreads: %d\nBlocks: %d\n", nElements, nThreads,
+   //        nBlocks);
+   // printf("TOTAL ELEMENTS: %d\n", nElements * nElements);
    // host matrices
    double *a, *b, *c;
    // device vectors
@@ -230,7 +233,7 @@ void matrixMultiplyTest(long nElements, int nThreads, int nBlocks,
    cudaEventElapsedTime(&calcTime, startCalc, endCalc);
    cudaEventElapsedTime(&elapsedTime, startEvent, stopEvent);
 
-   cout << "Elapsed time total: " << elapsedTime << " ms\n";
+   // cout << "Elapsed time total: " << elapsedTime << " ms\n";
 
    cudaEventDestroy(startEvent);
    cudaEventDestroy(stopEvent);
@@ -260,44 +263,45 @@ void matrixMultiplyTest(long nElements, int nThreads, int nBlocks,
       double alpha = 1.0, beta = 0.0;
       cublasHandle_t handle;
       cublasCreate(&handle);
-      cublasStatus_t flag = cublasDgemm_v2(
-          handle, CUBLAS_OP_N, CUBLAS_OP_N, nElements, nElements, nElements,
-          &alpha, da, nElements, db, nElements, &beta, dcTrue, nElements);
-      printf("%d\n", flag);
+      cublasDgemm_v2(handle, CUBLAS_OP_N, CUBLAS_OP_N, nElements, nElements,
+                     nElements, &alpha, da, nElements, db, nElements, &beta,
+                     dcTrue, nElements);
+      // printf("%d\n", flag);
 
       cudaMemcpy(cTrue, dcTrue, matrixSize, cudaMemcpyDeviceToHost);
 
-      for (int i = 0; i < nElements * nElements; i++) {
-         if (abs(cTrue[i] - c[i]) > 1) {
-            printf("INCORRECT\n");
-            isRight = false;
-            break;
-         }
-      }
-      int i, j;
-      printf(" Top left corner of matrix C: \n");
-      for (i = 0; i < min(nElements, (long)10); i++) {
-         for (j = 0; j < min(nElements, (long)10); j++) {
-            printf("%12.0f", c[j + i * nElements]);
-         }
-         printf("\n");
-      }
+      // for (int i = 0; i < nElements * nElements; i++) {
+      //    if (abs(cTrue[i] - c[i]) > 1) {
+      //       printf("INCORRECT\n");
+      //       isRight = false;
+      //       break;
+      //    }
+      // }
+      // int i, j;
+      // printf(" Top left corner of matrix C: \n");
+      // for (i = 0; i < min(nElements, (long)10); i++) {
+      //    for (j = 0; j < min(nElements, (long)10); j++) {
+      //       printf("%12.0f", c[j + i * nElements]);
+      //    }
+      //    printf("\n");
+      // }
 
-      printf("\n Top left corner of matrix CORRECT C: \n");
-      for (i = 0; i < min(nElements, (long)10); i++) {
-         for (j = 0; j < min(nElements, (long)10); j++) {
-            printf("%12.0f", cTrue[j + i * nElements]);
-         }
-         printf("\n");
-      }
+      // printf("\n Top left corner of matrix CORRECT C: \n");
+      // for (i = 0; i < min(nElements, (long)10); i++) {
+      //    for (j = 0; j < min(nElements, (long)10); j++) {
+      //       printf("%12.0f", cTrue[j + i * nElements]);
+      //    }
+      //    printf("\n");
+      // }
 
-      cudaFree(cTrue);
+      cudaFree(dcTrue);
+      free(cTrue);
       cublasDestroy(handle);
    }
 
    output << type << "," << nElements << "," << nThreads << "," << nBlocks
           << "," << elapsedTime << "," << calcTime << "," << isRight << ","
-          << profileKernel(nBlocks, nThreads, nElements) << ",\n";
+          << profileKernel(nBlocks, nThreads, nElements) << "," << endl;
 
    free(a);
    free(b);
@@ -311,6 +315,7 @@ void matrixMultiplyTest(long nElements, int nThreads, int nBlocks,
 
 // TYPE 0 is naive
 // TYPE 1 is cublas
+// TYPE 2 is tiled MM
 int main()
 {
    cudaDeviceReset();
@@ -325,8 +330,8 @@ int main()
              "Calculation "
              "Execution time (ms), isCorrect, Occupancy (%),\n";
 
-   for (int type = 0; type < 3; type++) {
-      for (long nElements = 10; nElements <= 11000; nElements += 100) {
+   for (int type = 0; type < 1; type++) {
+      for (long nElements = 3010; nElements <= 11000; nElements += 100) {
          matrixMultiplyTest(
              nElements, nThreads,
              // use only as many blocks as needed
