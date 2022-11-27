@@ -70,11 +70,15 @@ __global__ void optMM(const double* a, const double* b, double* c,
 
       // fill tiles and pad tiles
 
-      tileB[threadIdx.y][threadIdx.x] =
-          b[(row * nElements + block * TILE_LENGTH + threadIdx.x)] * CBB;
-
-      tileA[threadIdx.y][threadIdx.x] =
-          a[((block * TILE_LENGTH + threadIdx.y) * nElements + col)] * CBA;
+      if (CBB) {
+         tileB[threadIdx.y][threadIdx.x] =
+          b[(row * nElements + block * TILE_LENGTH + threadIdx.x)];
+      }
+      
+      if (CBA) {
+         tileA[threadIdx.y][threadIdx.x] =
+          a[((block * TILE_LENGTH + threadIdx.y) * nElements + col)];
+      }
 
       // wait till A and B tiles are fully populated
       __syncthreads();
