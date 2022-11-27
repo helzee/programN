@@ -321,14 +321,14 @@ int main()
    cudaDeviceReset();
 
    // DisplayHeader();
-   ofstream output;
-   output.open("test.csv");
+   //    ofstream output;
+   //    output.open("test.csv");
    // int maxElements = pow(2, 20);
    // int startElements = pow(2, 5);
    int nThreads = 1024;
-   output << "Type,Elements(NxN),Threads,Blocks,Full Execution time (ms), "
-             "Calculation "
-             "Execution time (ms), isCorrect, Occupancy (%),\n";
+   cout << "Type,Elements(NxN),Threads,Blocks,Full Execution time (ms), "
+           "Calculation "
+           "Execution time (ms), isCorrect, Occupancy (%),\n";
 
    for (int type = 0; type < 1; type++) {
       for (long nElements = 3010; nElements <= 11000; nElements += 100) {
@@ -336,9 +336,9 @@ int main()
              nElements, nThreads,
              // use only as many blocks as needed
              (int)ceil((double)(nElements * nElements) / (double)nThreads),
-             output, type);
+             cout, type);
       }
    }
 
-   output.close();
+   //    output.close();
 }
