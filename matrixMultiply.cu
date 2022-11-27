@@ -158,13 +158,13 @@ double profileKernel(int nBlocks, int nThreads, int nElements)
    activeWarps = nBlocks * nThreads / prop.warpSize;
    maxWarps = prop.maxThreadsPerMultiProcessor / prop.warpSize;
 
-   std::cout << "Occupancy: " << (double)activeWarps / maxWarps * 100 << "%"
-             << std::endl;
+//    std::cout << "Occupancy: " << (double)activeWarps / maxWarps * 100 << "%"
+//              << std::endl;
    return (double)activeWarps / maxWarps * 100;
 }
 
 void matrixMultiplyTest(long nElements, int nThreads, int nBlocks,
-                        ofstream& output, int type)
+                        ostream& output, int type)
 {
    printf("Elements: %d\nThreads: %d\nBlocks: %d\n", nElements, nThreads,
           nBlocks);
@@ -234,7 +234,7 @@ void matrixMultiplyTest(long nElements, int nThreads, int nBlocks,
    cudaEventElapsedTime(&calcTime, startCalc, endCalc);
    cudaEventElapsedTime(&elapsedTime, startEvent, stopEvent);
 
-   cout << "Elapsed time total: " << elapsedTime << " ms\n";
+   //cout << "Elapsed time total: " << elapsedTime << " ms\n";
 
    cudaEventDestroy(startEvent);
    cudaEventDestroy(stopEvent);
@@ -267,7 +267,7 @@ void matrixMultiplyTest(long nElements, int nThreads, int nBlocks,
       cublasStatus_t flag = cublasDgemm_v2(
           handle, CUBLAS_OP_N, CUBLAS_OP_N, nElements, nElements, nElements,
           &alpha, da, nElements, db, nElements, &beta, dcTrue, nElements);
-      printf("%d\n", flag);
+      //printf("%d\n", flag);
 
       cudaMemcpy(cTrue, dcTrue, matrixSize, cudaMemcpyDeviceToHost);
 
@@ -279,21 +279,21 @@ void matrixMultiplyTest(long nElements, int nThreads, int nBlocks,
          }
       }
       int i, j;
-      printf(" Top left corner of matrix C: \n");
-      for (i = 0; i < min(nElements, (long)10); i++) {
-         for (j = 0; j < min(nElements, (long)10); j++) {
-            printf("%12.0f", c[j + i * nElements]);
-         }
-         printf("\n");
-      }
+//       printf(" Top left corner of matrix C: \n");
+//       for (i = 0; i < min(nElements, (long)10); i++) {
+//          for (j = 0; j < min(nElements, (long)10); j++) {
+//             printf("%12.0f", c[j + i * nElements]);
+//          }
+//          printf("\n");
+//       }
 
-      printf("\n Top left corner of matrix CORRECT C: \n");
-      for (i = 0; i < min(nElements, (long)10); i++) {
-         for (j = 0; j < min(nElements, (long)10); j++) {
-            printf("%12.0f", cTrue[j + i * nElements]);
-         }
-         printf("\n");
-      }
+//       printf("\n Top left corner of matrix CORRECT C: \n");
+//       for (i = 0; i < min(nElements, (long)10); i++) {
+//          for (j = 0; j < min(nElements, (long)10); j++) {
+//             printf("%12.0f", cTrue[j + i * nElements]);
+//          }
+//          printf("\n");
+//       }
 
       cudaFree(cTrue);
       cublasDestroy(handle);
@@ -320,12 +320,12 @@ int main()
    cudaDeviceReset();
 
    // DisplayHeader();
-   ofstream output;
-   output.open("test.csv");
+//    ofstream output;
+//    output.open("test.csv");
    // int maxElements = pow(2, 20);
    // int startElements = pow(2, 5);
    int nThreads = 1024;
-   output << "Type,Elements(NxN),Threads,Blocks,Full Execution time (ms), "
+   cout << "Type,Elements(NxN),Threads,Blocks,Full Execution time (ms), "
              "Calculation "
              "Execution time (ms), isCorrect, Occupancy (%),\n";
 
@@ -335,9 +335,9 @@ int main()
              nElements, nThreads,
              // use only as many blocks as needed
              (int)ceil((double)(nElements * nElements) / (double)nThreads),
-             output, type);
+             cout, type);
       }
    }
 
-   output.close();
+//    output.close();
 }
