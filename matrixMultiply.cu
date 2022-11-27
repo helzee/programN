@@ -330,7 +330,7 @@ int main()
            "Calculation "
            "Execution time (ms), isCorrect, Occupancy (%),\n";
 
-   for (int type = 0; type < 1; type++) {
+   for (int type = 2; type < 3; type++) {
       for (long nElements = 3010; nElements <= 11000; nElements += 100) {
          matrixMultiplyTest(
              nElements, nThreads,
